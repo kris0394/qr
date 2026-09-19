@@ -60,7 +60,8 @@
       document.getElementById('status').innerHTML = "<span class='error-msg'>Missing code parameter.</span><br>Please scan a valid QR code.";
     } else {
       // 3. Request Google's data sheet grid endpoint
-      const url = `https://google.com{SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(TAB_NAME)}`;
+      const url = `https://google.com{1mpaVYwbBNaaFTq6_GeqxGWBmu61SorBNs0ehXzYRRxM
+}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(TAB_NAME)}`;
 
       fetch(url)
         .then(res => {
