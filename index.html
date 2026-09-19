@@ -24,8 +24,7 @@
     }
     .spinner { 
       border: 4px solid rgba(0,0,0,0.1); 
-      width: 36px; 
-      height: 36px; 
+      width: 36px; height: 36px; 
       border-radius: 50%; 
       border-left-color: #007aff; 
       animation: spin 1s linear infinite; 
@@ -45,21 +44,26 @@
 
   <script>
     // ==========================================
-    // 1. CONFIGURATION: Paste your spreadsheet ID below
+    // 1. CONFIGURATION: Update your Sheet ID below
     // ==========================================
     const SPREADSHEET_ID = '1mpaVYwbBNaaFTq6_GeqxGWBmu61SorBNs0ehXzYRRxM
 '; 
     const TAB_NAME = 'Redirects';
 
-    // 2. Safely grab parameter from URL string (?d=slug)
+    // 2. Safely capture the slug parameter (?d=slug)
     const urlParams = new URLSearchParams(window.location.search);
     const targetSlug = urlParams.get('d') ? urlParams.get('d').toLowerCase().trim() : '';
 
+    function stopLoader() {
+      const loader = document.getElementById('loader');
+      if (loader) loader.style.display = 'none';
+    }
+
     if (!targetSlug) {
-      document.getElementById('loader').style.display = 'none';
+      stopLoader();
       document.getElementById('status').innerHTML = "<span class='error-msg'>Missing code parameter.</span><br>Please scan a valid QR code.";
     } else {
-      // 3. Request Google's data sheet grid endpoint
+      // 3. Request Google's public JSON data grid endpoint
       const url = `https://google.com{1mpaVYwbBNaaFTq6_GeqxGWBmu61SorBNs0ehXzYRRxM
 }/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(TAB_NAME)}`;
 
@@ -69,23 +73,22 @@
           return res.text();
         })
         .then(data => {
-          // Extract JSON string from Google's protection wrapper callback safely
+          // Robust text parsing wrapper to clear Google's protection string safely
           const startIdx = data.indexOf('{');
           const endIdx = data.lastIndexOf('}');
-          if (startIdx === -1 || endIdx === -1) throw new Error("Invalid spreadsheet response format");
+          if (startIdx === -1 || endIdx === -1) throw new Error("Invalid spreadsheet payload format");
           
           const jsonData = JSON.parse(data.substring(startIdx, endIdx + 1));
           const rows = jsonData.table.rows;
-          
           let destinationUrl = "";
 
-          // 4. Safely evaluate every row layout line item
+          // 4. Safely traverse rows matching the column markers
           for (let i = 0; i < rows.length; i++) {
-            const rowData = rows[i].c;
-            
-            // Defensively verify row array structure has entries before indexing properties
-            if (rowData && rowData.length >= 4) {
-              // Column Index 2 is Slug | Column Index 3 is Destination URL
+            if (rows[i] && rows[i].c) {
+              const rowData = rows[i].c;
+              
+              // Direct array indexing checks for Slug (Index 2) and URL (Index 3)
+              // This format completely prevents crashes on empty columns/truncated rows
               const slugCell = rowData[2];
               const urlCell = rowData[3];
               
@@ -99,22 +102,21 @@
             }
           }
 
-          // Stop visual spinner animation element
-          document.getElementById('loader').style.display = 'none';
+          stopLoader();
 
-          // 5. Fire a standard user-agent clean HTTP redirect action frame
+          // 5. Fire breakout browser redirect or show manual button link
           if (destinationUrl) {
             destinationUrl = destinationUrl.replace(/[\n\r\t]/g, "");
             document.getElementById('status').innerHTML = 'Redirecting to verses... If the browser hangs, <a href="' + destinationUrl + '">click here to open</a>.';
             window.location.replace(destinationUrl);
           } else {
-            document.getElementById('status').innerHTML = `No link configured for temple code: "<strong>${targetSlug}</strong>". Please check your Redirects sheet tab.`;
+            document.getElementById('status').innerHTML = `No link configured for temple code: "<strong>${targetSlug}</strong>". Please verify your spreadsheet row keys.`;
           }
         })
         .catch(err => {
           console.error(err);
-          document.getElementById('loader').style.display = 'none';
-          document.getElementById('status').innerHTML = "<span class='error-msg'>Connection Failed.</span><br>Make sure 'Publish to the web' is checked on your Google Sheet.";
+          stopLoader();
+          document.getElementById('status').innerHTML = "<span class='error-msg'>Connection Failed.</span><br>Please verify your Spreadsheet ID configuration and ensure 'Publish to the web' is active.";
         });
     }
   </script>
