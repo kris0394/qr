@@ -1,124 +1,318 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Redirecting...</title>
+  <title>Opening Divya Desam...</title>
+
   <style>
-    body { 
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-      text-align: center; 
-      padding-top: 80px; 
-      background-color: #f7f9fa; 
-      color: #333; 
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      text-align: center;
+      padding-top: 80px;
+      background-color: #f7f9fa;
+      color: #333;
     }
-    .card { 
-      max-width: 90%; 
-      width: 340px; 
-      margin: 0 auto; 
-      padding: 30px 20px; 
-      border-radius: 12px; 
-      background: #ffffff; 
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
-      box-sizing: border-box; 
+
+    .card {
+      max-width: 90%;
+      width: 340px;
+      margin: 0 auto;
+      padding: 30px 20px;
+      border-radius: 12px;
+      background: #ffffff;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      box-sizing: border-box;
     }
-    .spinner { 
-      border: 4px solid rgba(0,0,0,0.1); 
-      width: 36px; height: 36px; 
-      border-radius: 50%; 
-      border-left-color: #007aff; 
-      animation: spin 1s linear infinite; 
-      margin: 0 auto 20px auto; 
+
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border-left-color: #007aff;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px auto;
     }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    a { color: #007aff; text-decoration: underline; font-weight: bold; }
-    .error-msg { color: #dc3545; font-weight: bold; margin-bottom: 10px; }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    a {
+      color: #007aff;
+      text-decoration: underline;
+      font-weight: bold;
+    }
+
+    .error-msg {
+      color: #dc3545;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
   </style>
 </head>
+
 <body>
+
   <div class="card">
+
     <div id="loader" class="spinner"></div>
-    <h2 style="margin: 0 0 10px 0; font-size: 18px;">Opening Divya Desam</h2>
-    <p id="status" style="font-size: 14px; color: #666; margin: 0; line-height: 1.4;">Connecting to spreadsheet...</p>
+
+    <h2 style="margin: 0 0 10px 0; font-size: 18px;">
+      Opening Divya Desam
+    </h2>
+
+    <p
+      id="status"
+      style="font-size: 14px; color: #666; margin: 0; line-height: 1.4;"
+    >
+      Connecting to spreadsheet...
+    </p>
+
   </div>
 
   <script>
+
     // ==========================================
-    // 1. CONFIGURATION: Paste your Sheet ID below
+    // CONFIGURATION
     // ==========================================
-    const SPREADSHEET_ID = '1mpaVYwbBNaaFTq6_GeqxGWBmu61SorBNs0ehXzYRRxM
-'; 
+
+    const SPREADSHEET_ID =
+      '1mpaVYwbBNaaFTq6_GeqxGWBmu61SorBNs0ehXzYRRxM';
+
     const TAB_NAME = 'Redirects';
 
-    // 2. Safely capture the slug parameter (?d=slug)
+
+    // ==========================================
+    // GET THE TEMPLE CODE FROM ?d=
+    // Example:
+    // your-page.html?d=srirangam
+    // ==========================================
+
     const urlParams = new URLSearchParams(window.location.search);
-    const targetSlug = urlParams.get('d') ? urlParams.get('d').toLowerCase().trim() : '';
+
+    const targetSlug = urlParams.get('d')
+      ? urlParams.get('d').toLowerCase().trim()
+      : '';
+
+
+    // ==========================================
+    // UI HELPERS
+    // ==========================================
 
     function stopLoader() {
       const loader = document.getElementById('loader');
-      if (loader) loader.style.display = 'none';
+
+      if (loader) {
+        loader.style.display = 'none';
+      }
     }
 
+    function setStatus(html) {
+      document.getElementById('status').innerHTML = html;
+    }
+
+
+    // ==========================================
+    // VALIDATE THE QR CODE
+    // ==========================================
+
     if (!targetSlug) {
+
       stopLoader();
-      document.getElementById('status').innerHTML = "<span class='error-msg'>Missing code parameter.</span><br>Please scan a valid QR code.";
+
+      setStatus(
+        "<span class='error-msg'>Missing code parameter.</span><br>" +
+        "Please scan a valid QR code."
+      );
+
     } else {
-      // 3. Request Google's public JSON data grid endpoint
-      const url = `https://google.com{1mpaVYwbBNaaFTq6_GeqxGWBmu61SorBNs0ehXzYRRxM
-}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(TAB_NAME)}`;
+
+      // ==========================================
+      // GOOGLE SHEETS GVIZ ENDPOINT
+      // ==========================================
+
+      const url =
+        `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq` +
+        `?tqx=out:json&sheet=${encodeURIComponent(TAB_NAME)}`;
+
 
       fetch(url)
-        .then(res => {
-          if (!res.ok) throw new Error("Could not reach Google Sheets API");
-          return res.text();
+
+        .then(response => {
+
+          if (!response.ok) {
+            throw new Error(
+              "Could not reach Google Sheets."
+            );
+          }
+
+          return response.text();
         })
+
+
         .then(data => {
+
+          // Google GViz wraps the JSON in a function-like response.
+          // Extract the actual JSON object.
+
           const startIdx = data.indexOf('{');
           const endIdx = data.lastIndexOf('}');
-          if (startIdx === -1 || endIdx === -1) throw new Error("Invalid spreadsheet payload format");
-          
-          const jsonData = JSON.parse(data.substring(startIdx, endIdx + 1));
-          const rows = jsonData.table.rows;
+
+          if (startIdx === -1 || endIdx === -1) {
+            throw new Error(
+              "Invalid spreadsheet response."
+            );
+          }
+
+          const jsonData =
+            JSON.parse(
+              data.substring(
+                startIdx,
+                endIdx + 1
+              )
+            );
+
+
+          const rows =
+            jsonData &&
+            jsonData.table &&
+            jsonData.table.rows
+              ? jsonData.table.rows
+              : [];
+
+
           let destinationUrl = "";
 
-          // 4. Safely traverse rows matching the column markers
+
+          // ==========================================
+          // FIND THE SLUG
+          //
+          // Redirects sheet:
+          //
+          // column C = Slug
+          // column D = Destination URL
+          // ==========================================
+
           for (let i = 0; i < rows.length; i++) {
-            if (rows[i] && rows[i].c) {
-              const rowData = rows[i].c;
-              
-              // FIXED: Explicitly mapping index [2] for Slug and index [3] for Destination URL
-              if (rowData.length >= 4) {
-                const slugCell = rowData[2]; 
-                const urlCell = rowData[3];  
-                
-                if (slugCell && slugCell.v && urlCell && urlCell.v) {
-                  const currentSlug = String(slugCell.v).toLowerCase().trim();
-                  if (currentSlug === targetSlug) {
-                    destinationUrl = String(urlCell.v).trim();
-                    break;
-                  }
-                }
+
+            if (!rows[i] || !rows[i].c) {
+              continue;
+            }
+
+            const rowData = rows[i].c;
+
+            if (rowData.length < 4) {
+              continue;
+            }
+
+            const slugCell = rowData[2];
+            const urlCell = rowData[3];
+
+
+            if (
+              slugCell &&
+              slugCell.v &&
+              urlCell &&
+              urlCell.v
+            ) {
+
+              const currentSlug =
+                String(slugCell.v)
+                  .toLowerCase()
+                  .trim();
+
+
+              if (currentSlug === targetSlug) {
+
+                destinationUrl =
+                  String(urlCell.v)
+                    .trim()
+                    .replace(/[\n\r\t]/g, '');
+
+                break;
               }
             }
           }
 
+
           stopLoader();
 
-          // 5. Fire breakout browser redirect or show manual button link
+
+          // ==========================================
+          // REDIRECT
+          // ==========================================
+
           if (destinationUrl) {
-            destinationUrl = destinationUrl.replace(/[\n\r\t]/g, "");
-            document.getElementById('status').innerHTML = 'Redirecting to verses... If the browser hangs, <a href="' + destinationUrl + '">click here to open</a>.';
-            window.location.replace(destinationUrl);
+
+            setStatus(
+              "Opening Pāsurams..."
+            );
+
+
+            // Use replace so the intermediate
+            // redirect page doesn't remain in
+            // browser history.
+
+            window.location.replace(
+              destinationUrl
+            );
+
+
           } else {
-            document.getElementById('status').innerHTML = `No link configured for temple code: "<strong>${targetSlug}</strong>". Please verify your spreadsheet row keys.`;
+
+            setStatus(
+              `No link configured for temple code: ` +
+              `<strong>${escapeHtml(targetSlug)}</strong>` +
+              `<br>Please verify the Redirects sheet.`
+            );
           }
+
         })
-        .catch(err => {
-          console.error(err);
+
+
+        .catch(error => {
+
+          console.error(error);
+
           stopLoader();
-          document.getElementById('status').innerHTML = "<span class='error-msg'>Connection Failed.</span><br>Please verify your Spreadsheet ID configuration and ensure 'Publish to the web' is active.";
+
+          setStatus(
+            "<span class='error-msg'>Connection Failed.</span><br>" +
+            "Please verify the Spreadsheet ID, sheet name, " +
+            "and that the spreadsheet is publicly accessible."
+          );
+
         });
+
     }
+
+
+    // ==========================================
+    // SMALL HTML ESCAPE HELPER
+    // Prevents the slug from being inserted
+    // directly into HTML.
+    // ==========================================
+
+    function escapeHtml(value) {
+
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+
+    }
+
   </script>
+
 </body>
 </html>
