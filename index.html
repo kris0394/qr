@@ -5,92 +5,114 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Redirecting...</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; text-align: center; padding-top: 80px; background-color: #f7f9fa; color: #333; }
-    .card { max-width: 90%; width: 340px; margin: 0 auto; padding: 30px 20px; border-radius: 12px; background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.08); box-sizing: border-box; }
-    .spinner { border: 4px solid rgba(0,0,0,0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: #007aff; animation: spin 1s linear infinite; margin: 0 auto 20px auto; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+      text-align: center; 
+      padding-top: 80px; 
+      background-color: #f7f9fa; 
+      color: #333; 
+    }
+    .card { 
+      max-width: 90%; 
+      width: 340px; 
+      margin: 0 auto; 
+      padding: 30px 20px; 
+      border-radius: 12px; 
+      background: #ffffff; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+      box-sizing: border-box; 
+    }
+    .spinner { 
+      border: 4px solid rgba(0,0,0,0.1); 
+      width: 36px; 
+      height: 36px; 
+      border-radius: 50%; 
+      border-left-color: #007aff; 
+      animation: spin 1s linear infinite; 
+      margin: 0 auto 20px auto; 
+    }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     a { color: #007aff; text-decoration: underline; font-weight: bold; }
+    .error-msg { color: #dc3545; font-weight: bold; margin-bottom: 10px; }
   </style>
 </head>
 <body>
   <div class="card">
-    <div class="spinner"></div>
+    <div id="loader" class="spinner"></div>
     <h2 style="margin: 0 0 10px 0; font-size: 18px;">Opening Divya Desam</h2>
     <p id="status" style="font-size: 14px; color: #666; margin: 0; line-height: 1.4;">Connecting to spreadsheet...</p>
   </div>
 
   <script>
-    // 1. CONFIGURATION: Paste your exact Google Sheet ID here
-    const SPREADSHEET_ID = 'YOUR_GOOGLE_SHEET_ID_HERE';
+    // ==========================================
+    // 1. CONFIGURATION: Paste your spreadsheet ID below
+    // ==========================================
+    const SPREADSHEET_ID = 'YOUR_GOOGLE_SHEET_ID_HERE'; 
     const TAB_NAME = 'Redirects';
 
-    // 2. Get the slug from the URL query parameter (?d=srirangam)
+    // 2. Safely grab parameter from URL string (?d=slug)
     const urlParams = new URLSearchParams(window.location.search);
     const targetSlug = urlParams.get('d') ? urlParams.get('d').toLowerCase().trim() : '';
 
     if (!targetSlug) {
-      document.getElementById('status').innerHTML = "Missing code parameter. Please check the QR code.";
+      document.getElementById('loader').style.display = 'none';
+      document.getElementById('status').innerHTML = "<span class='error-msg'>Missing code parameter.</span><br>Please scan a valid QR code.";
     } else {
-      // 3. Fetch the Google Sheet data directly as a clean JSON grid
-      const url = `https://google.com{1mpaVYwbBNaaFTq6_GeqxGWBmu61SorBNs0ehXzYRRxM}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(TAB_NAME)}`;
+      // 3. Request Google's data sheet grid endpoint
+      const url = `https://google.com{SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(TAB_NAME)}`;
 
-            fetch(url)
+      fetch(url)
         .then(res => {
-          if (!res.ok) throw new Error("Network response error");
+          if (!res.ok) throw new Error("Could not reach Google Sheets API");
           return res.text();
         })
         .then(data => {
-          // Bulletproof extraction finding the start and end tokens of Google's JSON payload
+          // Extract JSON string from Google's protection wrapper callback safely
           const startIdx = data.indexOf('{');
           const endIdx = data.lastIndexOf('}');
+          if (startIdx === -1 || endIdx === -1) throw new Error("Invalid spreadsheet response format");
           
-          if (startIdx === -1 || endIdx === -1) {
-            throw new Error("Invalid format received");
-          }
-          
-          const jsonString = data.substring(startIdx, endIdx + 1);
-          const jsonData = JSON.parse(jsonString);
+          const jsonData = JSON.parse(data.substring(startIdx, endIdx + 1));
           const rows = jsonData.table.rows;
           
           let destinationUrl = "";
 
-          // Loop through data rows safely
+          // 4. Safely evaluate every row layout line item
           for (let i = 0; i < rows.length; i++) {
-            const row = rows[i].c;
-            // Column Index 2 is Slug | Column Index 3 is Destination URL
-            if (row && row[2] && row[3]) {
-              const currentSlug = String(row[2].v).toLowerCase().trim();
-              if (currentSlug === targetSlug) {
-                destinationUrl = String(row[3].v).trim();
-                break;
+            const rowData = rows[i].c;
+            
+            // Defensively verify row array structure has entries before indexing properties
+            if (rowData && rowData.length >= 4) {
+              // Column Index 2 is Slug | Column Index 3 is Destination URL
+              const slugCell = rowData[2];
+              const urlCell = rowData[3];
+              
+              if (slugCell && slugCell.v && urlCell && urlCell.v) {
+                const currentSlug = String(slugCell.v).toLowerCase().trim();
+                if (currentSlug === targetSlug) {
+                  destinationUrl = String(urlCell.v).trim();
+                  break;
+                }
               }
             }
           }
 
-          // Execute a clean, direct browser redirect
-          if (destinationUrl) {
-            document.getElementById('status').innerHTML = 'Redirecting you to verses... If nothing happens, <a href="' + destinationUrl + '">click here</a>.';
-            window.location.replace(destinationUrl);
-          } else {
-            document.getElementById('status').innerHTML = `No link configured for code: "<strong>${targetSlug}</strong>". Please check the Redirects sheet.`;
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          document.getElementById('status').innerHTML = "Error loading spreadsheet data. Make sure 'Publish to the web' is enabled on the sheet.";
-        });
+          // Stop visual spinner animation element
+          document.getElementById('loader').style.display = 'none';
 
-          // 5. Execute a true, native browser window redirect
+          // 5. Fire a standard user-agent clean HTTP redirect action frame
           if (destinationUrl) {
-            document.getElementById('status').innerHTML = 'Redirecting you to verses... If nothing happens, <a href="' + destinationUrl + '">click here</a>.';
+            destinationUrl = destinationUrl.replace(/[\n\r\t]/g, "");
+            document.getElementById('status').innerHTML = 'Redirecting to verses... If the browser hangs, <a href="' + destinationUrl + '">click here to open</a>.';
             window.location.replace(destinationUrl);
           } else {
-            document.getElementById('status').innerHTML = `No link configured for code: "<strong>${targetSlug}</strong>". Please check the Redirects sheet.`;
+            document.getElementById('status').innerHTML = `No link configured for temple code: "<strong>${targetSlug}</strong>". Please check your Redirects sheet tab.`;
           }
         })
         .catch(err => {
           console.error(err);
-          document.getElementById('status').innerHTML = "Error loading spreadsheet data. Please try again later.";
+          document.getElementById('loader').style.display = 'none';
+          document.getElementById('status').innerHTML = "<span class='error-msg'>Connection Failed.</span><br>Make sure 'Publish to the web' is checked on your Google Sheet.";
         });
     }
   </script>
