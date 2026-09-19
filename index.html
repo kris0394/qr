@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redirecting...</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; text-align: center; padding-top: 80px; background-color: #f7f9fa; color: #333; }
+    .card { max-width: 90%; width: 340px; margin: 0 auto; padding: 30px 20px; border-radius: 12px; background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.08); box-sizing: border-box; }
+    .spinner { border: 4px solid rgba(0,0,0,0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: #007aff; animation: spin 1s linear infinite; margin: 0 auto 20px auto; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    a { color: #007aff; text-decoration: underline; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="spinner"></div>
+    <h2 style="margin: 0 0 10px 0; font-size: 18px;">Opening Divya Desam</h2>
+    <p id="status" style="font-size: 14px; color: #666; margin: 0; line-height: 1.4;">Connecting to spreadsheet...</p>
+  </div>
+
+  <script>
+    // 1. CONFIGURATION: Paste your exact Google Sheet ID here
+    const SPREADSHEET_ID = 'YOUR_GOOGLE_SHEET_ID_HERE';
+    const TAB_NAME = 'Redirects';
+
+    // 2. Get the slug from the URL query parameter (?d=srirangam)
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetSlug = urlParams.get('d') ? urlParams.get('d').toLowerCase().trim() : '';
+
+    if (!targetSlug) {
+      document.getElementById('status').innerHTML = "Missing code parameter. Please check the QR code.";
+    } else {
+      // 3. Fetch the Google Sheet data directly as a clean JSON grid
+      const url = `https://google.com{1mpaVYwbBNaaFTq6_GeqxGWBmu61SorBNs0ehXzYRRxM}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(TAB_NAME)}`;
+
+      fetch(url)
+        .then(res => res.text())
+        .then(data => {
+          // Clean Google's secure JSON wrapper response safely
+          const jsonData = JSON.parse(data.substring(47, data.length - 2));
+          const rows = jsonData.table.rows;
+          
+          let destinationUrl = "";
+
+          // 4. Loop through rows (Column Index 2 is Slug, Index 3 is URL)
+          for (let i = 0; i < rows.length; i++) {
+            const row = rows[i].c;
+            if (row && row[2] && row[3]) {
+              const currentSlug = String(row[2].v).toLowerCase().trim();
+              if (currentSlug === targetSlug) {
+                destinationUrl = String(row[3].v).trim();
+                break;
+              }
+            }
+          }
+
+          // 5. Execute a true, native browser window redirect
+          if (destinationUrl) {
+            document.getElementById('status').innerHTML = 'Redirecting you to verses... If nothing happens, <a href="' + destinationUrl + '">click here</a>.';
+            window.location.replace(destinationUrl);
+          } else {
+            document.getElementById('status').innerHTML = `No link configured for code: "<strong>${targetSlug}</strong>". Please check the Redirects sheet.`;
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById('status').innerHTML = "Error loading spreadsheet data. Please try again later.";
+        });
+    }
+  </script>
+</body>
+</html>
