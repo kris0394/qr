@@ -44,7 +44,7 @@
 
   <script>
     // ==========================================
-    // 1. CONFIGURATION: Update your Sheet ID below
+    // 1. CONFIGURATION: Paste your Sheet ID below
     // ==========================================
     const SPREADSHEET_ID = '1mpaVYwbBNaaFTq6_GeqxGWBmu61SorBNs0ehXzYRRxM
 '; 
@@ -73,7 +73,6 @@
           return res.text();
         })
         .then(data => {
-          // Robust text parsing wrapper to clear Google's protection string safely
           const startIdx = data.indexOf('{');
           const endIdx = data.lastIndexOf('}');
           if (startIdx === -1 || endIdx === -1) throw new Error("Invalid spreadsheet payload format");
@@ -87,16 +86,17 @@
             if (rows[i] && rows[i].c) {
               const rowData = rows[i].c;
               
-              // Direct array indexing checks for Slug (Index 2) and URL (Index 3)
-              // This format completely prevents crashes on empty columns/truncated rows
-              const slugCell = rowData[2];
-              const urlCell = rowData[3];
-              
-              if (slugCell && slugCell.v && urlCell && urlCell.v) {
-                const currentSlug = String(slugCell.v).toLowerCase().trim();
-                if (currentSlug === targetSlug) {
-                  destinationUrl = String(urlCell.v).trim();
-                  break;
+              // FIXED: Explicitly mapping index [2] for Slug and index [3] for Destination URL
+              if (rowData.length >= 4) {
+                const slugCell = rowData[2]; 
+                const urlCell = rowData[3];  
+                
+                if (slugCell && slugCell.v && urlCell && urlCell.v) {
+                  const currentSlug = String(slugCell.v).toLowerCase().trim();
+                  if (currentSlug === targetSlug) {
+                    destinationUrl = String(urlCell.v).trim();
+                    break;
+                  }
                 }
               }
             }
