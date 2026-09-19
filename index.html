@@ -34,18 +34,30 @@
       // 3. Fetch the Google Sheet data directly as a clean JSON grid
       const url = `https://google.com{1mpaVYwbBNaaFTq6_GeqxGWBmu61SorBNs0ehXzYRRxM}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(TAB_NAME)}`;
 
-      fetch(url)
-        .then(res => res.text())
+            fetch(url)
+        .then(res => {
+          if (!res.ok) throw new Error("Network response error");
+          return res.text();
+        })
         .then(data => {
-          // Clean Google's secure JSON wrapper response safely
-          const jsonData = JSON.parse(data.substring(47, data.length - 2));
+          // Bulletproof extraction finding the start and end tokens of Google's JSON payload
+          const startIdx = data.indexOf('{');
+          const endIdx = data.lastIndexOf('}');
+          
+          if (startIdx === -1 || endIdx === -1) {
+            throw new Error("Invalid format received");
+          }
+          
+          const jsonString = data.substring(startIdx, endIdx + 1);
+          const jsonData = JSON.parse(jsonString);
           const rows = jsonData.table.rows;
           
           let destinationUrl = "";
 
-          // 4. Loop through rows (Column Index 2 is Slug, Index 3 is URL)
+          // Loop through data rows safely
           for (let i = 0; i < rows.length; i++) {
             const row = rows[i].c;
+            // Column Index 2 is Slug | Column Index 3 is Destination URL
             if (row && row[2] && row[3]) {
               const currentSlug = String(row[2].v).toLowerCase().trim();
               if (currentSlug === targetSlug) {
@@ -54,6 +66,19 @@
               }
             }
           }
+
+          // Execute a clean, direct browser redirect
+          if (destinationUrl) {
+            document.getElementById('status').innerHTML = 'Redirecting you to verses... If nothing happens, <a href="' + destinationUrl + '">click here</a>.';
+            window.location.replace(destinationUrl);
+          } else {
+            document.getElementById('status').innerHTML = `No link configured for code: "<strong>${targetSlug}</strong>". Please check the Redirects sheet.`;
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById('status').innerHTML = "Error loading spreadsheet data. Make sure 'Publish to the web' is enabled on the sheet.";
+        });
 
           // 5. Execute a true, native browser window redirect
           if (destinationUrl) {
